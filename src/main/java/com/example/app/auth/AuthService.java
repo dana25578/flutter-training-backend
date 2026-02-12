@@ -25,7 +25,7 @@ public class AuthService {
         user.setPasswordHash(encoder.encode(req.getPassword()));
         user.setEnabled(true);
         repo.save(user);
-        return new LoginResponse(true,"Account created successfully");
+        return new LoginResponse(true,"Account created successfully", user.getId(),user.getUsername(),user.getEmail());
     }
     public LoginResponse login(LoginRequest req){
         var userOpt=repo.findByEmail(req.getEmail());
@@ -36,6 +36,6 @@ public class AuthService {
         if (!encoder.matches(req.getPassword(), user.getPasswordHash())){
             return new LoginResponse(false,"Invalid email or password");
         }
-        return new LoginResponse(true,"Login successful");
+        return new LoginResponse(true,"Login successful",user.getId(),user.getUsername(),user.getEmail());
     }
 }
