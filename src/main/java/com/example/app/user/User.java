@@ -15,6 +15,10 @@ public class User {
     private String passwordHash;
     @Column(nullable=false)
     private boolean enabled=true;
+    @Column(name="phone_number", nullable=false,length=20)
+    private String phoneNumber;
+    @Column(length = 255)
+    private String address;
     @Column(name="created_at",nullable=false)
     private LocalDateTime createdAt;
     public User() {}
@@ -32,4 +36,8 @@ public class User {
     public boolean isEnabled(){return enabled;}
     public void setEnabled(boolean enabled){this.enabled =enabled;}
     public LocalDateTime getCreatedAt(){return createdAt;}
+    public String getPhoneNumber(){return phoneNumber;}
+    public void setPhoneNumber(String phoneNumber){this.phoneNumber=phoneNumber;}
+    public String getAddress(){return address;}
+    public void setAddress(String address){this.address=address;}
 }

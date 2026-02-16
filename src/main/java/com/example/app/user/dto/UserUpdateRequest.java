@@ -7,5 +7,7 @@ public class UserUpdateRequest {
     @Email
     public String email;
     public Boolean enabled;
+    public String phoneNumber;
+    public String address;
     
 }

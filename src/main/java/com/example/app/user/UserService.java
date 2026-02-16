@@ -14,6 +14,8 @@ public class UserService {
         r.id =u.getId();
         r.username=u.getUsername();
         r.email=u.getEmail();
+        r.phoneNumber=u.getPhoneNumber();
+        r.address=u.getAddress();
         r.enabled=u.isEnabled();
         r.createdAt=u.getCreatedAt();
         return r;
@@ -35,6 +37,8 @@ public class UserService {
             if (repo.existsByEmail(req.email)) throw new RuntimeException("Email already used");
             u.setEmail(req.email);
         }
+        if (req.phoneNumber!=null)u.setPhoneNumber(req.phoneNumber);
+        if(req.address!=null) u.setAddress(req.address);
         if (req.enabled !=null) u.setEnabled(req.enabled);
         return toResponse(repo.save(u));
     }

@@ -19,13 +19,18 @@ public class AuthService {
         if (repo.existsByUsername(req.getUsername())){
             return new LoginResponse(false,"Username already used");
         }
+        if(req.getPhoneNumber()==null||req.getPhoneNumber().trim().isEmpty()){
+            return new LoginResponse(false, "phone number is required");
+        }
         User user= new User();
         user.setUsername(req.getUsername());
         user.setEmail(req.getEmail());
         user.setPasswordHash(encoder.encode(req.getPassword()));
+        user.setPhoneNumber(req.getPhoneNumber());
+        user.setAddress(req.getAddress()==null?null:req.getAddress().trim());
         user.setEnabled(true);
         repo.save(user);
-        return new LoginResponse(true,"Account created successfully", user.getId(),user.getUsername(),user.getEmail());
+        return new LoginResponse(true,"Account created successfully", user.getId(),user.getUsername(),user.getEmail(),user.getPhoneNumber(),user.getAddress());
     }
     public LoginResponse login(LoginRequest req){
         var userOpt=repo.findByEmail(req.getEmail());
@@ -36,6 +41,6 @@ public class AuthService {
         if (!encoder.matches(req.getPassword(), user.getPasswordHash())){
             return new LoginResponse(false,"Invalid email or password");
         }
-        return new LoginResponse(true,"Login successful",user.getId(),user.getUsername(),user.getEmail());
+        return new LoginResponse(true,"Login successful",user.getId(),user.getUsername(),user.getEmail(),user.getPhoneNumber(),user.getAddress());
     }
 }
