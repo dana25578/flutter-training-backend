@@ -14,5 +14,5 @@ public class RegisterRequest {
     public String getPhoneNumber(){return phoneNumber;}
     public void setPhoneNumber(String phoneNumber){this.phoneNumber=phoneNumber;}
     public String getAddress(){return address;}
-    public void setAdress(String address){this.address=address;}
+    public void setAddress(String address){this.address=address;}
 }
