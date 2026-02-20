@@ -21,9 +21,9 @@ public class Product {
     public Product(){}
     public Long getId(){return id;}
     public String getName(){return name;}
-    public void setName(){this.name=name;}
+    public void setName(String name){this.name=name;}
     public String getDescription(){return description;}
-    public void setDescription(){this.description=description;}
+    public void setDescription(String description){this.description=description;}
     public double getPrice(){return price;}
     public void setPrice(double price){this.price=price;}
     public String getImageUrl(){return imageUrl;}
