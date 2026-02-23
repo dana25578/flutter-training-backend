@@ -12,15 +12,18 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import com.example.app.email.EmailService;
 @Service
 public class OrderService {
     private final OrderRepository orderRepo;
     private final UserRepository userRepo;
     private final ProductRepository productRepo;
-    public OrderService(OrderRepository orderRepo,UserRepository userRepo,ProductRepository productRepo){
+    private final EmailService emailService;
+    public OrderService(OrderRepository orderRepo,UserRepository userRepo,ProductRepository productRepo,EmailService emailService){
         this.orderRepo=orderRepo;
         this.userRepo=userRepo;
         this.productRepo =productRepo;
+        this.emailService = emailService;
     }
     private OrderResponse toResponse(Order order){
         OrderResponse r=new OrderResponse();
@@ -72,6 +75,30 @@ public class OrderService {
         }
         order.setTotal(total);
         Order saved=orderRepo.save(order);
+        try{
+            String subject="New Order Placed (Order #" + saved.getId() + ")";
+            StringBuilder body=new StringBuilder();
+            body.append("New order placed\n\n");
+            body.append("Order ID: ").append(saved.getId()).append("\n");
+            body.append("Customer Information:\n");
+            body.append("Name: ").append(user.getUsername()).append("\n");
+            body.append("Email: ").append(user.getEmail()).append("\n");
+            body.append("Phone: ").append(user.getPhoneNumber()).append("\n");
+            body.append("Delivery Address: ").append(saved.getAddress()).append("\n");
+            body.append("Created At: ").append(saved.getCreatedAt()).append("\n");
+            body.append("\nItems:\n");
+            for (OrderItem it:saved.getItems()){
+                body.append("- ")
+                    .append(it.getProduct().getName())
+                    .append(" | qty: ").append(it.getQuantity())
+                    .append(" | unit price: ").append(it.getUnitPrice())
+                    .append("\n");
+            }
+             body.append("\nTotal:").append(saved.getTotal()).append("\n");
+             emailService.sendOwnerNewOrderEmail(subject, body.toString());
+        }catch(Exception e){
+        System.out.println("Email sending failed: " +e.getMessage());
+        }
         return toResponse(saved);
     }
     public List<OrderResponse> getByUser(Long userId){
