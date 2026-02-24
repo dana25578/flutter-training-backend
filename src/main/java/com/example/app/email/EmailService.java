@@ -1,10 +1,12 @@
 package com.example.app.email;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 @Service
-public class EmailService{
+public class EmailService {
     private final JavaMailSender mailSender;
     @Value("${store.owner.email}")
     private String ownerEmail;
@@ -13,12 +15,16 @@ public class EmailService{
     public EmailService(JavaMailSender mailSender){
         this.mailSender=mailSender;
     }
-    public void sendOwnerNewOrderEmail(String subject,String body){
-        SimpleMailMessage message=new SimpleMailMessage();
-        message.setTo(ownerEmail);
-        message.setFrom(fromEmail);
-        message.setSubject(subject);
-        message.setText(body);
+    public void sendOwnerNewOrderEmailHtml(String subject,String html) throws MessagingException{
+        sendEmailHtml(ownerEmail,subject,html);
+    }
+    public void sendEmailHtml(String to,String subject,String html) throws MessagingException{
+        MimeMessage message =mailSender.createMimeMessage();
+        MimeMessageHelper helper=new MimeMessageHelper(message,"UTF-8");
+        helper.setTo(to);
+        helper.setFrom(fromEmail);
+        helper.setSubject(subject);
+        helper.setText(html, true);
         mailSender.send(message);
     }
 }

@@ -13,12 +13,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import com.example.app.email.EmailService;
+import org.springframework.beans.factory.annotation.Value;
 @Service
 public class OrderService {
     private final OrderRepository orderRepo;
     private final UserRepository userRepo;
     private final ProductRepository productRepo;
     private final EmailService emailService;
+    @Value("${app.publicBaseUrl}")
+    private String publicBaseUrl;
     public OrderService(OrderRepository orderRepo,UserRepository userRepo,ProductRepository productRepo,EmailService emailService){
         this.orderRepo=orderRepo;
         this.userRepo=userRepo;
@@ -76,28 +79,11 @@ public class OrderService {
         order.setTotal(total);
         Order saved=orderRepo.save(order);
         try{
-            String subject="New Order Placed (Order #" + saved.getId() + ")";
-            StringBuilder body=new StringBuilder();
-            body.append("New order placed\n\n");
-            body.append("Order ID: ").append(saved.getId()).append("\n");
-            body.append("Customer Information:\n");
-            body.append("Name: ").append(user.getUsername()).append("\n");
-            body.append("Email: ").append(user.getEmail()).append("\n");
-            body.append("Phone: ").append(user.getPhoneNumber()).append("\n");
-            body.append("Delivery Address: ").append(saved.getAddress()).append("\n");
-            body.append("Created At: ").append(saved.getCreatedAt()).append("\n");
-            body.append("\nItems:\n");
-            for (OrderItem it:saved.getItems()){
-                body.append("- ")
-                    .append(it.getProduct().getName())
-                    .append(" | qty: ").append(it.getQuantity())
-                    .append(" | unit price: ").append(it.getUnitPrice())
-                    .append("\n");
-            }
-             body.append("\nTotal:").append(saved.getTotal()).append("\n");
-             emailService.sendOwnerNewOrderEmail(subject, body.toString());
-        }catch(Exception e){
-        System.out.println("Email sending failed: " +e.getMessage());
+            String subject="New Order Placed (Order #"+saved.getId()+")";
+            String html=buildOrderEmailHtml(saved,user);
+            emailService.sendOwnerNewOrderEmailHtml(subject,html);
+        }catch (Exception e){
+            System.out.println("Email sending failed: "+e.getMessage());
         }
         return toResponse(saved);
     }
@@ -109,5 +95,54 @@ public class OrderService {
             responses.add(toResponse(o));
         }
         return responses;
+    }
+    private String buildOrderEmailHtml(Order saved,User user){
+    StringBuilder itemsHtml= new StringBuilder();
+    for(OrderItem it:saved.getItems()){
+        itemsHtml.append("""
+            <tr>
+            <td style="padding:10px;border-bottom:1px solid#eee;">
+                <div style="font-weight:600;">%s</div>
+                <div style="color:#666;font-size:13px;">Qty: %d</div>
+            </td>
+            <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;">
+                <div style="font-weight:600;">$%.2f</div>
+                <div style="color:#666;font-size:13px;">Unit: $%.2f</div>
+            </td>
+            </tr>
+        """.formatted(it.getProduct().getName(),it.getQuantity(),(it.getUnitPrice() * it.getQuantity()),it.getUnitPrice()));
+    }
+    return """
+    <div style="font-family:Arial,sans-serif;background:#f6f7fb;padding:20px;">
+      <div style="max-width:700px;margin:auto;background:#fff;border-radius:16px; overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,0.08);">
+        <div style="padding:18px 22px;background:#111827;color:#fff;">
+          <div style="font-size:18px;font-weight:700;">New Order Placed</div>
+          <div style="opacity:0.9;font-size:13px;">Order #%d • %s</div>
+        </div>
+        <div style="padding:18px 22px;">
+          <div style="display:flex;gap:14px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:260px;background:#f9fafb;border:1px solid #eee;border-radius:12px;padding:12px;">
+              <div style="font-weight:700;margin-bottom:8px;">Customer</div>
+              <div><b>Name:</b> %s</div>
+              <div><b>Email:</b> %s</div>
+              <div><b>Phone:</b> %s</div>
+            </div>
+            <div style="flex:1;min-width:260px;background:#f9fafb;border:1px solid #eee;border-radius:12px;padding:12px;">
+              <div style="font-weight:700;margin-bottom:8px;">Delivery</div>
+              <div><b>Address:</b> %s</div>
+            </div>
+          </div>
+          <h3 style="margin:18px 0 10px;">Items</h3>
+          <table width="100%%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+            %s
+          </table>
+          <div style="margin-top:16px;padding:14px;background:#f3f4f6;border-radius:12px;display:flex;justify-content:space-between;">
+            <div style="font-weight:700;">Total</div>
+            <div style="font-weight:800;">$%.2f</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    """.formatted(saved.getId(),saved.getCreatedAt(),user.getUsername(),user.getEmail(),user.getPhoneNumber(),saved.getAddress(),itemsHtml.toString(),saved.getTotal());
     }
 }
