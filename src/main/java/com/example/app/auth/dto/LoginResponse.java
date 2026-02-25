@@ -7,9 +7,12 @@ public class LoginResponse {
     private String email;
     private String phoneNumber;
     private String address;
+    private boolean requiresVerification;
     public LoginResponse(boolean success,String message){
         this.success =success;
         this.message=message;
+        this.requiresVerification= false;
+
     }
     public LoginResponse(boolean success, String message, Long id, String username,String email,String phoneNumber,String address){
         this.success=success;
@@ -19,6 +22,13 @@ public class LoginResponse {
         this.email=email;
         this.phoneNumber=phoneNumber;
         this.address=address;
+        this.requiresVerification= false;
+    }
+    public LoginResponse(boolean success, String message,boolean requiresVerification,String email){
+        this.success =success;
+        this.message =message;
+        this.requiresVerification= requiresVerification;
+        this.email =email;
     }
     public boolean isSuccess(){return success;}
     public String getMessage(){return message;}
@@ -27,4 +37,5 @@ public class LoginResponse {
     public String getEmail(){return email;}
     public String getPhoneNumber(){return phoneNumber;}
     public String getAddress(){return address;}
+    public boolean isRequiresVerification(){return requiresVerification;}
 }

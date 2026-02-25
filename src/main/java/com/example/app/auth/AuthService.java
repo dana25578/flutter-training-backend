@@ -4,43 +4,82 @@ import com.example.app.user.User;
 import com.example.app.user.UserRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.example.app.otp.OtpService;
+import com.example.app.otp.PendingUserRepository;
+import com.example.app.otp.PendingUser;
+import com.example.app.auth.dto.LoginRequest;
+import com.example.app.auth.dto.LoginResponse;
+import com.example.app.auth.dto.RegisterRequest;
 @Service
 public class AuthService {
     private final UserRepository repo;
     private final BCryptPasswordEncoder encoder;
-    public AuthService(UserRepository repo, BCryptPasswordEncoder encoder){
+    private final OtpService otpService;
+    private final PendingUserRepository pendingRepo;
+    public AuthService(UserRepository repo, BCryptPasswordEncoder encoder,OtpService otpService,PendingUserRepository pendingRepo){
         this.repo=repo;
         this.encoder=encoder;
+        this.otpService=otpService;
+        this.pendingRepo=pendingRepo;
     }
     public LoginResponse register(RegisterRequest req){
-        if (repo.existsByEmail(req.getEmail())){
-            return new LoginResponse(false,"Email already used");
+        String email=req.getEmail()==null?"":req.getEmail().trim().toLowerCase();
+        String username=req.getUsername()==null ?"":req.getUsername().trim();
+        String phone=req.getPhoneNumber()==null? "":req.getPhoneNumber().trim();
+        String password=req.getPassword()==null ? "":req.getPassword().trim();
+        if (email.isEmpty()) return new LoginResponse(false,"Email is required");
+        if (username.isEmpty()) return new LoginResponse(false,"Username is required");
+        if (phone.isEmpty()) return new LoginResponse(false,"Phone number is required");
+        if (password.isEmpty()) return new LoginResponse(false,"Password is required");
+        if (repo.existsByEmail(email)){
+            return new LoginResponse(false,"This email is already used. Please login.");
+        };
+        if (repo.existsByPhoneNumber(phone)){
+            return new LoginResponse(false,"This phone number is already used");
         }
-        if (repo.existsByUsername(req.getUsername())){
-            return new LoginResponse(false,"Username already used");
+        if (pendingRepo.existsByEmail(email)){
+            return new LoginResponse(false,"This email is pending verification. Please login to verify.");
         }
-        if(req.getPhoneNumber()==null||req.getPhoneNumber().trim().isEmpty()){
-            return new LoginResponse(false, "phone number is required");
+        if (pendingRepo.existsByPhoneNumber(phone)){
+            return new LoginResponse(false,"This phone number is pending verification. Please login to verify");
         }
-        User user= new User();
-        user.setUsername(req.getUsername());
-        user.setEmail(req.getEmail());
-        user.setPasswordHash(encoder.encode(req.getPassword()));
-        user.setPhoneNumber(req.getPhoneNumber());
-        user.setAddress(req.getAddress()==null?null:req.getAddress().trim());
-        user.setEnabled(true);
-        repo.save(user);
-        return new LoginResponse(true,"Account created successfully", user.getId(),user.getUsername(),user.getEmail(),user.getPhoneNumber(),user.getAddress());
+        PendingUser pending=new PendingUser();
+        pending.setEmail(email);
+        pending.setUsername(username);
+        pending.setPhoneNumber(phone);
+        pending.setAddress(req.getAddress()==null?null:req.getAddress().trim());
+        pending.setPasswordHash(encoder.encode(password));
+        pendingRepo.save(pending);
+        otpService.sendEmailOtp(email);
+        return new LoginResponse(true,"OTP sent. Please verify your email.",true,email);
     }
     public LoginResponse login(LoginRequest req){
-        var userOpt=repo.findByEmail(req.getEmail());
-        if (userOpt.isEmpty()){
-            return new LoginResponse(false,"Invalid email or password");
+        String email=req.getEmail() ==null ?"":req.getEmail().trim().toLowerCase();
+        String password =req.getPassword()==null?"":req.getPassword();
+        if (email.isEmpty()||password.isEmpty()){
+            return new LoginResponse(false,"Email and password are required");
         }
-        User user = userOpt.get();
-        if (!encoder.matches(req.getPassword(), user.getPasswordHash())){
-            return new LoginResponse(false,"Invalid email or password");
+        var userOpt =repo.findByEmail(email);
+        if (userOpt.isPresent()){
+            User user= userOpt.get();
+            if (!encoder.matches(password,user.getPasswordHash()))
+                return new LoginResponse(false,"Invalid email or password");
+            if (!user.isEnabled()){
+                otpService.sendEmailOtp(email);
+                return new LoginResponse(false,"Please verify your email to activate your account.",true,email);
+            }
+            return new LoginResponse(true,"Login successful",user.getId(),user.getUsername(),user.getEmail(),user.getPhoneNumber(),user.getAddress());
         }
-        return new LoginResponse(true,"Login successful",user.getId(),user.getUsername(),user.getEmail(),user.getPhoneNumber(),user.getAddress());
+        var pendingOpt=pendingRepo.findByEmail(email);
+        if (pendingOpt.isPresent()){
+            PendingUser pending=pendingOpt.get();
+            if (!encoder.matches(password, pending.getPasswordHash())){
+                return new LoginResponse(false,"Invalid email or password");
+            }
+            otpService.sendEmailOtp(email);
+            return new LoginResponse(false,"Please verify your email to activate your account.",true,email);
+        }
+        return new LoginResponse(false,"Invalid email or password");
     }
+    
 }

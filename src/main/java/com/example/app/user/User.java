@@ -7,20 +7,22 @@ public class User {
     @Id
     @GeneratedValue(strategy =GenerationType.IDENTITY)
     private Long id;
-    @Column(nullable=false,unique=true,length=30)
+    @Column(nullable=false,length=30)
     private String username;
     @Column(nullable=false,unique=true,length=100)
     private String email;
     @Column(name="password_hash",nullable=false,length=255)
     private String passwordHash;
     @Column(nullable=false)
-    private boolean enabled=true;
-    @Column(name="phone_number", nullable=false,length=20)
+    private boolean enabled=false;
+    @Column(name="phone_number",unique = true, nullable=false,length=20)
     private String phoneNumber;
     @Column(length = 255)
     private String address;
     @Column(name="created_at",nullable=false)
     private LocalDateTime createdAt;
+    @Column(name="email_verified",nullable =false)
+    private boolean emailVerified=false;
     public User() {}
     @PrePersist
     protected void onCreate(){
@@ -40,4 +42,6 @@ public class User {
     public void setPhoneNumber(String phoneNumber){this.phoneNumber=phoneNumber;}
     public String getAddress(){return address;}
     public void setAddress(String address){this.address=address;}
+    public boolean isEmailVerified(){return emailVerified;}
+    public void setEmailVerified(boolean emailVerified){this.emailVerified=emailVerified;}
 }
