@@ -10,17 +10,20 @@ import com.example.app.otp.PendingUser;
 import com.example.app.auth.dto.LoginRequest;
 import com.example.app.auth.dto.LoginResponse;
 import com.example.app.auth.dto.RegisterRequest;
+import com.example.app.security.JwtService;
 @Service
 public class AuthService {
     private final UserRepository repo;
     private final BCryptPasswordEncoder encoder;
     private final OtpService otpService;
     private final PendingUserRepository pendingRepo;
-    public AuthService(UserRepository repo, BCryptPasswordEncoder encoder,OtpService otpService,PendingUserRepository pendingRepo){
+    private final JwtService jwtService;
+    public AuthService(UserRepository repo, BCryptPasswordEncoder encoder,OtpService otpService,PendingUserRepository pendingRepo,JwtService jwtService){
         this.repo=repo;
         this.encoder=encoder;
         this.otpService=otpService;
         this.pendingRepo=pendingRepo;
+        this.jwtService = jwtService;
     }
     public LoginResponse register(RegisterRequest req){
         String email=req.getEmail()==null?"":req.getEmail().trim().toLowerCase();
@@ -68,7 +71,9 @@ public class AuthService {
                 otpService.sendEmailOtp(email);
                 return new LoginResponse(false,"Please verify your email to activate your account.",true,email);
             }
-            return new LoginResponse(true,"Login successful",user.getId(),user.getUsername(),user.getEmail(),user.getPhoneNumber(),user.getAddress());
+            LoginResponse resp =new LoginResponse(true,"Login successful",user.getId(),user.getUsername(),user.getEmail(),user.getPhoneNumber(),user.getAddress());
+            resp.setToken(jwtService.generateToken(user.getId(),user.getEmail()));
+            return resp;
         }
         var pendingOpt=pendingRepo.findByEmail(email);
         if (pendingOpt.isPresent()){

@@ -11,6 +11,7 @@ import com.example.app.auth.dto.LoginRequest;
 import com.example.app.auth.dto.LoginResponse;
 import com.example.app.auth.dto.RegisterRequest;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.app.security.JwtService;
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(origins="*")
@@ -19,11 +20,13 @@ public class AuthController {
     private final OtpService otpService;
     private final UserRepository userRepo;
     private final PendingUserRepository pendingRepo;
-    public AuthController(AuthService service,OtpService otpService,UserRepository userRepo,PendingUserRepository pendingRepo){
+    private final JwtService jwtService;
+    public AuthController(AuthService service,OtpService otpService,UserRepository userRepo,PendingUserRepository pendingRepo,JwtService jwtService){
         this.service= service;
         this.otpService=otpService;
         this.userRepo=userRepo;
         this.pendingRepo = pendingRepo;
+        this.jwtService = jwtService;
     }
     @PostMapping("/register")
     public LoginResponse register(@RequestBody RegisterRequest req){
@@ -55,7 +58,9 @@ public class AuthController {
             user.setEnabled(true);
             User saved=userRepo.save(user);
             pendingRepo.deleteByEmail(email);
-            return new LoginResponse(true,"Email verified successfully",saved.getId(),saved.getUsername(),saved.getEmail(),saved.getPhoneNumber(),saved.getAddress());
+            LoginResponse resp=new LoginResponse(true,"Email verified successfully",saved.getId(),saved.getUsername(),saved.getEmail(),saved.getPhoneNumber(),saved.getAddress());
+            resp.setToken(jwtService.generateToken(saved.getId(),saved.getEmail()));
+            return resp;
     }catch (RuntimeException e){
         return new LoginResponse(false,e.getMessage());
     }
