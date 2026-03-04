@@ -13,6 +13,13 @@ public class OrderController {
     }
     @PostMapping
     public OrderResponse create(@RequestBody CreateOrderRequest req){
+        Long currentUserId= com.example.app.security.SecurityUtil.getCurrentUserId();
+        if (currentUserId==null){
+            throw new RuntimeException("unauthorized");
+        }
+        if (req.userId==null||!req.userId.equals(currentUserId)){
+            throw new RuntimeException("Forbidden: userId does not match token user");
+        }
         return service.create(req);
     }
     @GetMapping("/by-user/{userId}")

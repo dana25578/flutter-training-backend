@@ -8,6 +8,7 @@ public class LoginResponse {
     private String phoneNumber;
     private String address;
     private boolean requiresVerification;
+    private String token;
     public LoginResponse(boolean success,String message){
         this.success =success;
         this.message=message;
@@ -38,4 +39,6 @@ public class LoginResponse {
     public String getPhoneNumber(){return phoneNumber;}
     public String getAddress(){return address;}
     public boolean isRequiresVerification(){return requiresVerification;}
+    public String getToken(){return token;}
+    public void setToken(String token){this.token=token;}
 }
