@@ -12,6 +12,7 @@ import com.example.app.auth.dto.LoginResponse;
 import com.example.app.auth.dto.RegisterRequest;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.app.security.JwtService;
+import java.util.List;
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(origins="*")
@@ -59,7 +60,8 @@ public class AuthController {
             User saved=userRepo.save(user);
             pendingRepo.deleteByEmail(email);
             LoginResponse resp=new LoginResponse(true,"Email verified successfully",saved.getId(),saved.getUsername(),saved.getEmail(),saved.getPhoneNumber(),saved.getAddress());
-            resp.setToken(jwtService.generateToken(saved.getId(),saved.getEmail()));
+            List<String> perms=saved.getPermissions().stream().map(p->p.getName()).toList();
+            resp.setToken(jwtService.generateToken(saved.getId(),saved.getEmail(),perms));
             return resp;
     }catch (RuntimeException e){
         return new LoginResponse(false,e.getMessage());

@@ -3,6 +3,8 @@ import com.example.app.order.dto.CreateOrderRequest;
 import com.example.app.order.dto.OrderResponse;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import org.springframework.security.access.prepost.PreAuthorize;
+import com.example.app.security.SecurityUtil;
 @RestController
 @RequestMapping("/api/orders")
 @CrossOrigin(origins="*")
@@ -12,8 +14,9 @@ public class OrderController {
         this.service=service;
     }
     @PostMapping
+    @PreAuthorize("hasAuthority('ORDER_CREATE')")
     public OrderResponse create(@RequestBody CreateOrderRequest req){
-        Long currentUserId= com.example.app.security.SecurityUtil.getCurrentUserId();
+        Long currentUserId=SecurityUtil.getCurrentUserId();
         if (currentUserId==null){
             throw new RuntimeException("unauthorized");
         }
@@ -23,7 +26,15 @@ public class OrderController {
         return service.create(req);
     }
     @GetMapping("/by-user/{userId}")
+    @PreAuthorize("hasAuthority('ORDER_READ_OWN')")
     public List<OrderResponse> getByUser(@PathVariable Long userId){
+        Long currentUserId=SecurityUtil.getCurrentUserId();
+        if (currentUserId==null){
+            throw new RuntimeException("unauthorized");
+        }
+        if (!userId.equals(currentUserId)){
+        throw new RuntimeException("Forbidden: cannot read other user's orders");
+        }
         return service.getByUser(userId);
     }
 }

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
+import java.util.List;
 @Service
 public class JwtService {
     @Value("${app.jwt.secret}")
@@ -15,10 +16,10 @@ public class JwtService {
     private Key key(){
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
-    public String generateToken(Long userId,String email){
+    public String generateToken(Long userId,String email,List<String> permissions){
         Date now= new Date();
         Date exp=new Date(now.getTime()+expMinutes*60_000);
-        return Jwts.builder().setSubject(email).claim("uid",userId).setIssuedAt(now).setExpiration(exp).signWith(key(),SignatureAlgorithm.HS256).compact();
+        return Jwts.builder().setSubject(email).claim("uid",userId).claim("perms", permissions).setIssuedAt(now).setExpiration(exp).signWith(key(),SignatureAlgorithm.HS256).compact();
     }
     public String extractEmail(String token){
         return parseClaims(token).getBody().getSubject();
@@ -29,6 +30,12 @@ public class JwtService {
         if (uid instanceof Integer i) return i.longValue();
         if (uid instanceof Long l) return l;
         return Long.parseLong(uid.toString());
+    }
+    @SuppressWarnings("unchecked")
+    public List<String> extractPermissions(String token){
+        Object perms =parseClaims(token).getBody().get("perms");
+        if (perms==null) return List.of();
+        return (List<String>) perms;
     }
     public boolean isTokenValid(String token){
         try{

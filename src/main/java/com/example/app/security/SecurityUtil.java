@@ -8,6 +8,10 @@ public class SecurityUtil {
         if (auth==null||!auth.isAuthenticated()||auth.getPrincipal()== null){
             return null;
         }
+        Object principal=auth.getPrincipal();
+        if (principal instanceof JwtPrincipal jp){
+            return jp.getId();
+        }
         if (auth.getPrincipal() instanceof CustomUserDetails cud){
             return cud.getId();
         }

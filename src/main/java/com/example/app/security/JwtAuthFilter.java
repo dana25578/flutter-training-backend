@@ -10,13 +10,13 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import java.util.List;
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter{
     private final JwtService jwtService;
-    private final CustomUserDetailsService userDetailsService;
-    public JwtAuthFilter(JwtService jwtService,CustomUserDetailsService userDetailsService){
+    public JwtAuthFilter(JwtService jwtService){
         this.jwtService =jwtService;
-        this.userDetailsService=userDetailsService;
     }
     @Override
     protected void doFilterInternal(
@@ -29,8 +29,11 @@ public class JwtAuthFilter extends OncePerRequestFilter{
             String token=header.substring(7);
             if (jwtService.isTokenValid(token) && SecurityContextHolder.getContext().getAuthentication()==null){
                 String email=jwtService.extractEmail(token);
-                UserDetails userDetails=userDetailsService.loadUserByUsername(email);
-                UsernamePasswordAuthenticationToken auth =new UsernamePasswordAuthenticationToken(userDetails,null,userDetails.getAuthorities());
+                Long uid=jwtService.extractUserId(token);
+                List<String> perms=jwtService.extractPermissions(token);
+                var authorities=perms.stream().map(SimpleGrantedAuthority::new).toList();
+                JwtPrincipal principal=new JwtPrincipal(uid,email,authorities);
+                UsernamePasswordAuthenticationToken auth=new UsernamePasswordAuthenticationToken(principal,null,authorities);
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }

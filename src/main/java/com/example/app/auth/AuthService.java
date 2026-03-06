@@ -11,6 +11,7 @@ import com.example.app.auth.dto.LoginRequest;
 import com.example.app.auth.dto.LoginResponse;
 import com.example.app.auth.dto.RegisterRequest;
 import com.example.app.security.JwtService;
+import java.util.List;
 @Service
 public class AuthService {
     private final UserRepository repo;
@@ -72,7 +73,8 @@ public class AuthService {
                 return new LoginResponse(false,"Please verify your email to activate your account.",true,email);
             }
             LoginResponse resp =new LoginResponse(true,"Login successful",user.getId(),user.getUsername(),user.getEmail(),user.getPhoneNumber(),user.getAddress());
-            resp.setToken(jwtService.generateToken(user.getId(),user.getEmail()));
+            List<String> perms=user.getPermissions().stream().map(p->p.getName()).toList();
+            resp.setToken(jwtService.generateToken(user.getId(),user.getEmail(),perms));
             return resp;
         }
         var pendingOpt=pendingRepo.findByEmail(email);

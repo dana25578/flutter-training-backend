@@ -1,6 +1,9 @@
 package com.example.app.user;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import com.example.app.security.Permission;
+import java.util.HashSet;
+import java.util.Set;
 @Entity
 @Table(name="users")
 public class User {
@@ -28,6 +31,13 @@ public class User {
     protected void onCreate(){
         if (createdAt==null) createdAt =LocalDateTime.now();
     }
+    @ManyToMany(fetch=FetchType.EAGER)
+    @JoinTable(
+        name="user_permissions",
+        joinColumns=@JoinColumn(name="user_id"),
+        inverseJoinColumns= @JoinColumn(name="permission_id")
+    )
+    private Set<Permission> permissions = new HashSet<>();
     public Long getId(){return id;}
     public String getUsername(){return username;}
     public void setUsername(String username) {this.username= username;}
@@ -44,4 +54,6 @@ public class User {
     public void setAddress(String address){this.address=address;}
     public boolean isEmailVerified(){return emailVerified;}
     public void setEmailVerified(boolean emailVerified){this.emailVerified=emailVerified;}
+    public Set<Permission> getPermissions(){return permissions;}
+    public void setPermissions(Set<Permission> permissions){this.permissions= permissions;}
 }
