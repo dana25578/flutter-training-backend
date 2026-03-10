@@ -12,6 +12,8 @@ import com.example.app.auth.dto.LoginResponse;
 import com.example.app.auth.dto.RegisterRequest;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.app.security.JwtService;
+import com.example.app.security.PermissionRepository;
+
 import java.util.List;
 @RestController
 @RequestMapping("/api/auth")
@@ -22,12 +24,14 @@ public class AuthController {
     private final UserRepository userRepo;
     private final PendingUserRepository pendingRepo;
     private final JwtService jwtService;
-    public AuthController(AuthService service,OtpService otpService,UserRepository userRepo,PendingUserRepository pendingRepo,JwtService jwtService){
+    private final PermissionRepository permissionRepo;
+    public AuthController(AuthService service,OtpService otpService,UserRepository userRepo,PendingUserRepository pendingRepo,JwtService jwtService,PermissionRepository permissionRepo){
         this.service= service;
         this.otpService=otpService;
         this.userRepo=userRepo;
         this.pendingRepo = pendingRepo;
         this.jwtService = jwtService;
+        this.permissionRepo = permissionRepo;
     }
     @PostMapping("/register")
     public LoginResponse register(@RequestBody RegisterRequest req){
@@ -58,6 +62,11 @@ public class AuthController {
             user.setEmailVerified(true);
             user.setEnabled(true);
             User saved=userRepo.save(user);
+            saved.getPermissions().add(permissionRepo.findByName("ORDER_CREATE").orElseThrow(()->new RuntimeException("ORDER_CREATE not found")));
+            saved.getPermissions().add(permissionRepo.findByName("ORDER_READ_OWN").orElseThrow(()->new RuntimeException("ORDER_READ_OWN not found")));
+            saved.getPermissions().add(permissionRepo.findByName("USER_READ_SELF").orElseThrow(()->new RuntimeException("USER_READ_SELF not found")));
+            saved.getPermissions().add(permissionRepo.findByName("USER_UPDATE_SELF").orElseThrow(()->new RuntimeException("USER_UPDATE_SELF not found")));
+            saved=userRepo.save(saved);
             pendingRepo.deleteByEmail(email);
             LoginResponse resp=new LoginResponse(true,"Email verified successfully",saved.getId(),saved.getUsername(),saved.getEmail(),saved.getPhoneNumber(),saved.getAddress());
             List<String> perms=saved.getPermissions().stream().map(p->p.getName()).toList();
