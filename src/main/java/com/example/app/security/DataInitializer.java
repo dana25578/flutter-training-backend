@@ -23,9 +23,13 @@ public class DataInitializer implements CommandLineRunner {
         Permission USER_UPDATE_SELF=getOrCreate("USER_UPDATE_SELF");
         Permission USER_READ_ALL=getOrCreate("USER_READ_ALL");
         Permission USER_DELETE=getOrCreate("USER_DELETE");
+        Permission CART_READ_SELF=getOrCreate("CART_READ_SELF");
+        Permission CART_UPDATE_SELF=getOrCreate("CART_UPDATE_SELF");
+        Permission WISHLIST_READ_SELF=getOrCreate("WISHLIST_READ_SELF");
+        Permission WISHLIST_UPDATE_SELF=getOrCreate("WISHLIST_UPDATE_SELF");
         for (User u:userRepo.findAll()){
             if (u.isEnabled()){
-                u.getPermissions().addAll(Set.of(ORDER_CREATE,ORDER_READ_OWN,USER_READ_SELF,USER_UPDATE_SELF));
+                u.getPermissions().addAll(Set.of(ORDER_CREATE,ORDER_READ_OWN,USER_READ_SELF,USER_UPDATE_SELF,CART_READ_SELF,CART_UPDATE_SELF,WISHLIST_READ_SELF,WISHLIST_UPDATE_SELF));
                 if (u.getEmail()!=null && u.getEmail().equalsIgnoreCase("admin@admin.com")){
                     u.getPermissions().addAll(Set.of(USER_READ_ALL,USER_DELETE));
                 }

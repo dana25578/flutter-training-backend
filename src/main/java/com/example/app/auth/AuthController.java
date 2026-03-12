@@ -13,7 +13,6 @@ import com.example.app.auth.dto.RegisterRequest;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.app.security.JwtService;
 import com.example.app.security.PermissionRepository;
-
 import java.util.List;
 @RestController
 @RequestMapping("/api/auth")
@@ -66,6 +65,10 @@ public class AuthController {
             saved.getPermissions().add(permissionRepo.findByName("ORDER_READ_OWN").orElseThrow(()->new RuntimeException("ORDER_READ_OWN not found")));
             saved.getPermissions().add(permissionRepo.findByName("USER_READ_SELF").orElseThrow(()->new RuntimeException("USER_READ_SELF not found")));
             saved.getPermissions().add(permissionRepo.findByName("USER_UPDATE_SELF").orElseThrow(()->new RuntimeException("USER_UPDATE_SELF not found")));
+            saved.getPermissions().add(permissionRepo.findByName("CART_READ_SELF").orElseThrow(()->new RuntimeException("CART_READ_SELF not found")));
+            saved.getPermissions().add(permissionRepo.findByName("CART_UPDATE_SELF").orElseThrow(()->new RuntimeException("CART_UPDATE_SELF not found")));
+            saved.getPermissions().add(permissionRepo.findByName("WISHLIST_READ_SELF").orElseThrow(()->new RuntimeException("WISHLIST_READ_SELF not found")));
+            saved.getPermissions().add(permissionRepo.findByName("WISHLIST_UPDATE_SELF").orElseThrow(()->new RuntimeException("WISHLIST_UPDATE_SELF not found")));
             saved=userRepo.save(saved);
             pendingRepo.deleteByEmail(email);
             LoginResponse resp=new LoginResponse(true,"Email verified successfully",saved.getId(),saved.getUsername(),saved.getEmail(),saved.getPhoneNumber(),saved.getAddress());
